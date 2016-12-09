@@ -94,11 +94,13 @@ class Meal(object):
 class Test(object):
     """A Test object can be used to test a table swapping function with the range of diner and course counts specified"""
     def __init__(self, function):
-        self.min_diners = 10
-        self.max_diners = 50
+        self.min_diners = 6
+        self.max_diners = 30
         self.min_courses = 3
-        self.max_courses = 3
+        self.max_courses = 4
         self.function = function
+        self.results_df = self.test_function()
+        self.average_improvement = self.final_verdict()
 
     def calculate_score(self, interactions):
         return (
@@ -106,7 +108,8 @@ class Test(object):
 
     def test_function(self):
         """Returns the average social interaction ratings as a percentage change in the quality of social
-        interactions from a table where nobody moves (the lambda function)"""
+        interactions from a table where nobody moves (the lambda function).
+        Results in a dtaframe with each course count as a cloumn and each diner count as a row"""
         resultses = []
         for func in [self.function, lambda x: x]:
             results = pd.DataFrame(index=list(range(self.min_diners, self.max_diners + 1)),
@@ -121,6 +124,24 @@ class Test(object):
         social_interaction_benefit = ((resultses[0] / resultses[1]) * 100) - 100
         return social_interaction_benefit
 
+    def final_verdict(self):
+        """Currently just averages the dataframe, maybe it should do something cleverer?"""
+        verdict = self.results_df.mean().mean()
+        return verdict
+
+    def plot_results(self):
+        legend = []
+        for course in range(self.min_courses, self.max_courses + 1):
+            plt.plot(self.results_df.index.values, self.results_df[course])
+            legend.append(str(course) + " courses")
+        plt.legend(legend, loc='lower right')
+        plt.xlabel('Number of dinner guests')
+        plt.ylabel('Percent increase in social interaction rating')
+        plt.title('Improvement in social interactions from the\n'+
+                  'swapping function, relative to stationary benchmark')
+        plt.annotate('This function has an\naverage improvement of:\n' +
+                     str(self.average_improvement), xy = (self.min_diners ,35))
+        plt.show()
 
 def Example_Function(table):
     """This function makes all guests moving 3 places around the table"""
@@ -130,10 +151,6 @@ def Example_Function(table):
     bottom = out_table[1][n:] + out_table[0][:-(n + 1):-1]
     return np.array([top, bottom])
 
-
 if __name__ == "__main__":
-    n_course = 3
-    test = Test(function=Example_Function)
-    results = test.test_function()
-    plt.plot(results.index.values, results[n_course])
-    plt.show()
+    example_test = Test(function=Example_Function)
+    example_test.plot_results()
